@@ -1,0 +1,4 @@
+mpc_host = my_mpd_password@127.0.0.1
+user = testuser
+password = testpassword
+address_port = 127.0.0.1:8080
