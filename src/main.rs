@@ -157,18 +157,23 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
-    body = body.replace("{{{CONTENT}}}", "Accepted");
-    response.body(body);
+    response.render(format!("Accepted\n{}", mpc_result.unwrap()));
 }
 
-async fn do_mpc_command(action: &str, config: &Config) -> Result<(), String> {
+async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String> {
+    let mut output = String::new();
     match action {
         "toggle" => {
             let status = Command::new("mpc")
                 .arg(&format!("--host={}", config.mpc_host))
                 .arg("toggle")
                 .output();
-            if let Err(e) = status {
+            if let Ok(out) = status {
+                output = out
+                    .stdout
+                    .try_into()
+                    .unwrap_or("Unable to be converted to String".to_string());
+            } else if let Err(e) = status {
                 return Err(format!("Failed to \"toggle\": {}", e.to_string()));
             }
         }
@@ -177,7 +182,12 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<(), String> {
                 .arg(&format!("--host={}", config.mpc_host))
                 .arg("next")
                 .output();
-            if let Err(e) = status {
+            if let Ok(out) = status {
+                output = out
+                    .stdout
+                    .try_into()
+                    .unwrap_or("Unable to be converted to String".to_string());
+            } else if let Err(e) = status {
                 return Err(format!("Failed to \"next\": {}", e.to_string()));
             }
         }
@@ -186,14 +196,19 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<(), String> {
                 .arg(&format!("--host={}", config.mpc_host))
                 .arg("prev")
                 .output();
-            if let Err(e) = status {
+            if let Ok(out) = status {
+                output = out
+                    .stdout
+                    .try_into()
+                    .unwrap_or("Unable to be converted to String".to_string());
+            } else if let Err(e) = status {
                 return Err(format!("Failed to \"prev\": {}", e.to_string()));
             }
         }
         _ => return Err(format!("Invalid action \"{}\"", action)),
     }
 
-    Ok(())
+    Ok(output)
 }
 
 #[tokio::main]
