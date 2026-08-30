@@ -157,7 +157,14 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
-    response.render(format!("Accepted\n{}", mpc_result.unwrap()));
+    body = body.replace(
+        "{{{CONTENT}}}",
+        &format!(
+            "Accepted<br />{}",
+            mpc_result.unwrap().replace('\n', "<br />")
+        ),
+    );
+    response.body(body);
 }
 
 async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String> {
