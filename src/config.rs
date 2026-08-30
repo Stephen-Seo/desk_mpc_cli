@@ -9,6 +9,8 @@ pub struct Config {
     pub mpc_host: String,
     pub user: String,
     pub password: String,
+    pub hash_password: String,
+    pub hash_salt: String,
     pub address_port: String,
 }
 
@@ -20,6 +22,8 @@ impl Config {
         let mut mpc_host_opt: Option<String> = None;
         let mut user_opt: Option<String> = None;
         let mut password_opt: Option<String> = None;
+        let mut hash_password_opt: Option<String> = None;
+        let mut hash_salt_opt: Option<String> = None;
         let mut address_port_opt: Option<String> = None;
 
         for line in config_content.split('\n') {
@@ -41,6 +45,22 @@ impl Config {
                 if !password.is_empty() {
                     password_opt = Some(password);
                 }
+            } else if line.starts_with("hash_password") {
+                let idx = line
+                    .find('=')
+                    .ok_or("Invalid hash_password line!".to_string())?;
+                let hash_password: String = line[(idx + 1)..].trim().to_string();
+                if !hash_password.is_empty() {
+                    hash_password_opt = Some(hash_password);
+                }
+            } else if line.starts_with("hash_salt") {
+                let idx = line
+                    .find('=')
+                    .ok_or("Invalid hash_salt line!".to_string())?;
+                let hash_salt: String = line[(idx + 1)..].trim().to_string();
+                if !hash_salt.is_empty() {
+                    hash_salt_opt = Some(hash_salt);
+                }
             } else if line.starts_with("address_port") {
                 let idx = line
                     .find('=')
@@ -52,7 +72,22 @@ impl Config {
             }
         }
 
-        if let Some(mpc_host) = mpc_host_opt
+        if let Some(ref mpc_host) = mpc_host_opt
+            && let Some(ref user) = user_opt
+            && let Some(hash_password) = hash_password_opt
+            && let Some(hash_salt) = hash_salt_opt
+            && let Some(address_port) = address_port_opt
+        {
+            // TODO verify why using refs are necessary
+            Ok(Config {
+                mpc_host: mpc_host.to_owned(),
+                user: user.to_owned(),
+                password: String::new(),
+                hash_password,
+                hash_salt,
+                address_port,
+            })
+        } else if let Some(mpc_host) = mpc_host_opt
             && let Some(user) = user_opt
             && let Some(password) = password_opt
             && let Some(address_port) = address_port_opt
@@ -61,10 +96,14 @@ impl Config {
                 mpc_host,
                 user,
                 password,
+                hash_password: String::new(),
+                hash_salt: String::new(),
                 address_port,
             })
         } else {
-            Err(String::from("Invalid config file contents!"))
+            Err(String::from(
+                "Invalid config file contents (need password OR hash_password and hash_salt)!",
+            ))
         }
     }
 

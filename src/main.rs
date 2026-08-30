@@ -1,10 +1,12 @@
 use std::process::Command;
 
+use hmac_sha512::Hash;
 use salvo::prelude::*;
 
 use crate::config::Config;
 
 mod config;
+mod hashing;
 
 #[handler]
 async fn get_prompt(response: &mut Response) {
@@ -85,15 +87,51 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
-    if let Some(password) = request.form::<&str>("password").await
-        && config.password == password
-    {
-        // Success condition, intentionally left blank.
+    if !config.hash_password.is_empty() && !config.hash_salt.is_empty() {
+        if let Some(password) = request.form::<&str>("password").await {
+            let mut hasher = Hash::new();
+            hasher.update(password.as_bytes());
+
+            let mut salt_data = [0u8; 64];
+            let result = hex::decode_to_slice(&config.hash_salt, &mut salt_data);
+            if let Err(e) = result {
+                eprintln!("ERROR: Failed to decode hexadecimal salt: {}", e);
+                response.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                body = body.replace("{{{CONTENT}}}", "Internal Server Error");
+                response.body(body);
+                return;
+            }
+
+            hasher.update(salt_data);
+            let hash = hasher.finalize();
+
+            let hash_hexadecimal = hex::encode(hash);
+
+            if hash_hexadecimal == config.hash_password {
+                // Success condition, intentionally left blank.
+            } else {
+                response.status_code(StatusCode::BAD_REQUEST);
+                body = body.replace("{{{CONTENT}}}", "Bad Request");
+                response.body(body);
+                return;
+            }
+        } else {
+            response.status_code(StatusCode::BAD_REQUEST);
+            body = body.replace("{{{CONTENT}}}", "Bad Request");
+            response.body(body);
+            return;
+        }
     } else {
-        response.status_code(StatusCode::BAD_REQUEST);
-        body = body.replace("{{{CONTENT}}}", "Bad Request");
-        response.body(body);
-        return;
+        if let Some(password) = request.form::<&str>("password").await
+            && config.password == password
+        {
+            // Success condition, intentionally left blank.
+        } else {
+            response.status_code(StatusCode::BAD_REQUEST);
+            body = body.replace("{{{CONTENT}}}", "Bad Request");
+            response.body(body);
+            return;
+        }
     }
 
     let action_opt: Option<&str> = request.form("action").await;
@@ -160,6 +198,14 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<(), String> {
 
 #[tokio::main]
 async fn main() {
+    for arg in std::env::args() {
+        if arg == "--generate" {
+            hashing::interactive_gen_hash_salt()
+                .expect("Should be able to generate hash and salt!");
+            return;
+        }
+    }
+
     let config: Config = Config::parse_config_from_arg()
         .expect("Config file should be specified via \"--config=<filename>\"!");
 

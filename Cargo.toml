@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+getrandom = "0.4"
+hex = "0.4"
+hmac-sha512 = "1.1"
 salvo = { version = "0.96", features = ["affix-state"] }
-tokio = "1.53.1"
+scanpw = "1.0"
+tokio = "1.53"
