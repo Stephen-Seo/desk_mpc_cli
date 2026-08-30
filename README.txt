@@ -20,3 +20,11 @@ password to be used in the config.
 
 
 See the "test.config" and "test_hash.config" example config files.
+
+
+Use nginx as a reverse proxy for hosting with https
+
+    location /mpc {
+        rewrite .* / break;
+        proxy_pass http://127.0.0.1:8080;
+    }
