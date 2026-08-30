@@ -1,8 +1,13 @@
 use hmac_sha512::Hash;
-use scanpw::scanpw;
 
 pub fn interactive_gen_hash_salt() -> Result<(), String> {
-    let password = scanpw!("Input your password to hash:");
+    let password: String = rpassword::prompt_password("Enter your password to hash: ")
+        .map_err(|e| format!("Failed to get password from user: {}", e))?;
+
+    if password.is_empty() {
+        eprintln!("ERROR: password is empty!");
+        return Err(String::from("Password is empty!"));
+    }
 
     let mut hash_buf = [0u8; 64];
 
