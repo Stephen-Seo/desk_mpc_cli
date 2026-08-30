@@ -78,6 +78,12 @@ impl Config {
             && let Some(hash_salt) = hash_salt_opt
             && let Some(address_port) = address_port_opt
         {
+            if hex::decode(&hash_password).is_err() {
+                return Err(String::from("Invalid \"hash_password\" (not hexadecimal)!"));
+            } else if hex::decode(&hash_salt).is_err() {
+                return Err(String::from("Invalid \"hash_salt\" (not hexadecimal)!"));
+            }
+
             // TODO verify why using refs are necessary
             Ok(Config {
                 mpc_host: mpc_host.to_owned(),
