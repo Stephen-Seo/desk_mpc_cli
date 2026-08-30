@@ -41,6 +41,7 @@ async fn get_prompt(response: &mut Response) {
             <label><input type=\"radio\" name=\"action\" value=\"toggle\" /> Toggle</label>
             <label><input type=\"radio\" name=\"action\" value=\"next\" /> Next</label>
             <label><input type=\"radio\" name=\"action\" value=\"prev\" /> Prev</label>
+            <label><input type=\"radio\" name=\"action\" value=\"status\" /> Status</label>
             </fieldset>
 
             <br />
@@ -210,6 +211,19 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                     .unwrap_or("Unable to be converted to String".to_string());
             } else if let Err(e) = status {
                 return Err(format!("Failed to \"prev\": {}", e.to_string()));
+            }
+        }
+        "status" => {
+            let status = Command::new("mpc")
+                .arg(&format!("--host={}", config.mpc_host))
+                .output();
+            if let Ok(out) = status {
+                output = out
+                    .stdout
+                    .try_into()
+                    .unwrap_or("Unable to be converted to String".to_string());
+            } else if let Err(e) = status {
+                return Err(format!("Failed to \"status\": {}", e.to_string()));
             }
         }
         _ => return Err(format!("Invalid action \"{}\"", action)),
