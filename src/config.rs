@@ -134,8 +134,8 @@ impl Config {
 
     pub fn parse_config_from_arg() -> Result<Config, String> {
         for arg in std::env::args() {
-            if arg.starts_with("--config=") {
-                let path = PathBuf::from_str(&arg[9..])
+            if let Some(arg) = arg.strip_prefix("--config=") {
+                let path = PathBuf::from_str(arg)
                     .map_err(|_| "Failed to parse arg \"--config=<path>\"!".to_string())?;
                 return Self::parse_from_config_file(&path);
             }

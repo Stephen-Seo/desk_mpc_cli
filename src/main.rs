@@ -161,7 +161,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
 
     let action = action_opt.unwrap();
 
-    let mpc_result = do_mpc_command(action, &config).await;
+    let mpc_result = do_mpc_command(action, config).await;
 
     if let Err(e) = mpc_result {
         response.status_code(StatusCode::INTERNAL_SERVER_ERROR);
@@ -189,7 +189,7 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
     match action {
         "toggle" => {
             let status = Command::new("mpc")
-                .arg(&format!("--host={}", config.mpc_host))
+                .arg(format!("--host={}", config.mpc_host))
                 .arg("toggle")
                 .output();
             if let Ok(out) = status {
@@ -198,12 +198,12 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                     .try_into()
                     .unwrap_or("Unable to be converted to String".to_string());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"toggle\": {}", e.to_string()));
+                return Err(format!("Failed to \"toggle\": {}", e));
             }
         }
         "next" => {
             let status = Command::new("mpc")
-                .arg(&format!("--host={}", config.mpc_host))
+                .arg(format!("--host={}", config.mpc_host))
                 .arg("next")
                 .output();
             if let Ok(out) = status {
@@ -212,12 +212,12 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                     .try_into()
                     .unwrap_or("Unable to be converted to String".to_string());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"next\": {}", e.to_string()));
+                return Err(format!("Failed to \"next\": {}", e));
             }
         }
         "prev" => {
             let status = Command::new("mpc")
-                .arg(&format!("--host={}", config.mpc_host))
+                .arg(format!("--host={}", config.mpc_host))
                 .arg("prev")
                 .output();
             if let Ok(out) = status {
@@ -226,12 +226,12 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                     .try_into()
                     .unwrap_or("Unable to be converted to String".to_string());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"prev\": {}", e.to_string()));
+                return Err(format!("Failed to \"prev\": {}", e));
             }
         }
         "status" => {
             let status = Command::new("mpc")
-                .arg(&format!("--host={}", config.mpc_host))
+                .arg(format!("--host={}", config.mpc_host))
                 .output();
             if let Ok(out) = status {
                 output = out
@@ -239,7 +239,7 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                     .try_into()
                     .unwrap_or("Unable to be converted to String".to_string());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"status\": {}", e.to_string()));
+                return Err(format!("Failed to \"status\": {}", e));
             }
         }
         _ => return Err(format!("Invalid action \"{}\"", action)),
