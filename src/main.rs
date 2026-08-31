@@ -14,10 +14,11 @@
 // OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-use std::process::Command;
+use std::{process::Command, time::Duration};
 
 use hmac_sha512::Hash;
 use salvo::prelude::*;
+use tokio::time::{Instant, sleep_until};
 
 use crate::config::Config;
 
@@ -104,6 +105,8 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
+    let sleep_instant: Instant = Instant::now() + Duration::from_millis(1500);
+
     if !config.hash_password.is_empty() && !config.hash_salt.is_empty() {
         if let Some(password) = request.form::<&str>("password").await {
             let mut hasher = Hash::new();
@@ -125,8 +128,10 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
             let hash_hexadecimal = hex::encode(hash);
 
             if hash_hexadecimal == config.hash_password {
-                // Success condition, intentionally left blank.
+                // Success condition
+                sleep_until(sleep_instant).await;
             } else {
+                sleep_until(sleep_instant).await;
                 response.status_code(StatusCode::BAD_REQUEST);
                 body = body.replace("{{{CONTENT}}}", "Bad Request");
                 response.body(body);
@@ -142,8 +147,10 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         if let Some(password) = request.form::<&str>("password").await
             && config.password == password
         {
-            // Success condition, intentionally left blank.
+            // Success condition
+            sleep_until(sleep_instant).await;
         } else {
+            sleep_until(sleep_instant).await;
             response.status_code(StatusCode::BAD_REQUEST);
             body = body.replace("{{{CONTENT}}}", "Bad Request");
             response.body(body);
