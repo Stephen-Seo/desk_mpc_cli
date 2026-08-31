@@ -185,7 +185,11 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         "{{{CONTENT}}}",
         &format!(
             "Accepted<br />{}",
-            mpc_result.unwrap().replace('\n', "<br />")
+            mpc_result
+                .unwrap()
+                .replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('\n', "<br />")
         ),
     );
     response.body(body);
