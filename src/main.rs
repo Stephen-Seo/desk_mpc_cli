@@ -59,6 +59,7 @@ async fn get_prompt(response: &mut Response) {
             <label><input type=\"radio\" name=\"action\" value=\"next\" /> Next</label>
             <label><input type=\"radio\" name=\"action\" value=\"prev\" /> Prev</label>
             <label><input type=\"radio\" name=\"action\" value=\"status\" /> Status</label>
+            <label><input type=\"radio\" name=\"action\" value=\"single_mode\" /> Single Mode</label>
             </fieldset>
 
             <br />
@@ -251,6 +252,20 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                     .unwrap_or("Unable to be converted to String".to_string());
             } else if let Err(e) = status {
                 return Err(format!("Failed to \"status\": {}", e));
+            }
+        }
+        "single_mode" => {
+            let status = Command::new("mpc")
+                .arg(format!("--host={}", config.mpc_host))
+                .arg("single")
+                .output();
+            if let Ok(out) = status {
+                output = out
+                    .stdout
+                    .try_into()
+                    .unwrap_or("Unable to be converted to String".to_string());
+            } else if let Err(e) = status {
+                return Err(format!("Failed to \"single\": {}", e));
             }
         }
         _ => return Err(format!("Invalid action \"{}\"", action)),
