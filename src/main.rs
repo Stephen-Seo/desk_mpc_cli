@@ -263,6 +263,8 @@ async fn main() {
 
     let acceptor = TcpListener::new(config.address_port.clone()).bind().await;
 
+    eprintln!("Listening on: {}", config.address_port);
+
     let router = Router::new()
         .hoop(affix_state::inject(config))
         .get(get_prompt)
