@@ -95,18 +95,19 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
     "
     .to_string();
 
+    let sleep_instant: Instant = Instant::now() + Duration::from_millis(1500);
+
     if let Some(username) = request.form::<&str>("username").await
         && config.user == username
     {
         // Success condition, intentionally left blank.
     } else {
+        sleep_until(sleep_instant).await;
         response.status_code(StatusCode::BAD_REQUEST);
         body = body.replace("{{{CONTENT}}}", "Bad Request");
         response.body(body);
         return;
     }
-
-    let sleep_instant: Instant = Instant::now() + Duration::from_millis(1500);
 
     if !config.hash_password.is_empty() && !config.hash_salt.is_empty() {
         if let Some(password) = request.form::<&str>("password").await {
