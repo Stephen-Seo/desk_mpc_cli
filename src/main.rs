@@ -130,8 +130,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
             let hash_hexadecimal = hex::encode(hash);
 
             if hash_hexadecimal == config.hash_password {
-                // Success condition
-                sleep_until(sleep_instant).await;
+                // Success condition, intentionally left blank
             } else {
                 sleep_until(sleep_instant).await;
                 response.status_code(StatusCode::BAD_REQUEST);
@@ -140,6 +139,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
                 return;
             }
         } else {
+            sleep_until(sleep_instant).await;
             response.status_code(StatusCode::BAD_REQUEST);
             body = body.replace("{{{CONTENT}}}", "Bad Request");
             response.body(body);
@@ -149,8 +149,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         if let Some(password) = request.form::<&str>("password").await
             && config.password == password
         {
-            // Success condition
-            sleep_until(sleep_instant).await;
+            // Success condition, intentionally left blank
         } else {
             sleep_until(sleep_instant).await;
             response.status_code(StatusCode::BAD_REQUEST);
@@ -162,11 +161,14 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
 
     let action_opt: Option<&str> = request.form("action").await;
     if action_opt.is_none() {
+        sleep_until(sleep_instant).await;
         response.status_code(StatusCode::BAD_REQUEST);
         body = body.replace("{{{CONTENT}}}", "Bad Request");
         response.body(body);
         return;
     }
+
+    sleep_until(sleep_instant).await;
 
     let action = action_opt.unwrap();
 
