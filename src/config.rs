@@ -104,7 +104,6 @@ impl Config {
                     return Err(String::from("Invalid \"hash_salt\" (not hexadecimal)!"));
                 }
 
-                // TODO verify why using refs are necessary
                 Ok(Config {
                     mpc_host,
                     user,
