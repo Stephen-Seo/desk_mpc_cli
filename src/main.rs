@@ -97,10 +97,13 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
 
     let sleep_instant: Instant = Instant::now() + Duration::from_millis(1500);
 
+    let user_pass: &config::UserPass;
+
     if let Some(username) = request.form::<&str>("username").await
-        && config.user == username
+        && let Some(config_user_pass) = config.users.get(username)
     {
-        // Success condition, intentionally left blank.
+        // Success condition
+        user_pass = config_user_pass;
     } else {
         sleep_until(sleep_instant).await;
         response.status_code(StatusCode::BAD_REQUEST);
@@ -109,13 +112,13 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
-    if !config.hash_password.is_empty() && !config.hash_salt.is_empty() {
+    if !user_pass.hash_password.is_empty() && !user_pass.hash_salt.is_empty() {
         if let Some(password) = request.form::<&str>("password").await {
             let mut hasher = Hash::new();
             hasher.update(password.as_bytes());
 
             let mut salt_data = [0u8; 64];
-            let result = hex::decode_to_slice(&config.hash_salt, &mut salt_data);
+            let result = hex::decode_to_slice(&user_pass.hash_salt, &mut salt_data);
             if let Err(e) = result {
                 eprintln!("ERROR: Failed to decode hexadecimal salt: {}", e);
                 response.status_code(StatusCode::INTERNAL_SERVER_ERROR);
@@ -129,7 +132,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
 
             let hash_hexadecimal = hex::encode(hash);
 
-            if hash_hexadecimal == config.hash_password {
+            if hash_hexadecimal == user_pass.hash_password {
                 // Success condition, intentionally left blank
             } else {
                 sleep_until(sleep_instant).await;
@@ -147,7 +150,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         }
     } else {
         if let Some(password) = request.form::<&str>("password").await
-            && config.password == password
+            && user_pass.password == password
         {
             // Success condition, intentionally left blank
         } else {
