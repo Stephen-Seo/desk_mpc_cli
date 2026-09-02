@@ -17,8 +17,21 @@
 use hmac_sha512::Hash;
 
 pub fn interactive_gen_hash_salt() -> Result<(), String> {
-    let password: String = rpassword::prompt_password("Enter your password to hash: ")
-        .map_err(|e| format!("Failed to get password from user: {}", e))?;
+    let mut password: String;
+
+    loop {
+        password = rpassword::prompt_password("Enter your password to hash: ")
+            .map_err(|e| format!("Failed to get password from user: {}", e))?;
+
+        let verify_pass: String = rpassword::prompt_password("Enter password again to verify: ")
+            .map_err(|e| format!("Failed to get password from user: {}", e))?;
+
+        if password == verify_pass {
+            break;
+        } else {
+            eprintln!("Entries don't match, try again.");
+        }
+    }
 
     if password.is_empty() {
         eprintln!("ERROR: password is empty!");
