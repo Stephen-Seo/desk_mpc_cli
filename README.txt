@@ -25,6 +25,6 @@ See the "test.config" and "test_hash.config" example config files.
 Use nginx as a reverse proxy for hosting with https
 
     location /mpc {
-        rewrite .* / break;
+        rewrite ^/mpc(.*) $1 break;
         proxy_pass http://127.0.0.1:8080;
     }

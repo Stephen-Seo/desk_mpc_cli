@@ -14,7 +14,13 @@
 // OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-use std::{process::Command, time::Duration};
+use std::{
+    collections::HashMap,
+    process::Command,
+    sync::{Arc, Mutex},
+    thread::{self, sleep},
+    time::Duration,
+};
 
 use hmac_sha512::Hash;
 use salvo::prelude::*;
@@ -24,6 +30,40 @@ use crate::config::Config;
 
 mod config;
 mod hashing;
+
+const CACHE_LIFETIME: Duration = Duration::from_secs(120);
+
+#[derive(Debug, Clone)]
+struct CacheStruct {
+    mpc_output: String,
+    created_instant: Instant,
+}
+
+impl CacheStruct {
+    pub fn new(output: String) -> Self {
+        Self {
+            mpc_output: output,
+            created_instant: Instant::now(),
+        }
+    }
+}
+
+type OutputCacheT = Arc<Mutex<HashMap<String, CacheStruct>>>;
+
+const COMMON_BODY: &str = "
+        <html>
+        <head>
+            <style>
+            body {
+                color: #FFF;
+                background-color: #333;
+            }
+            </style>
+        </head>
+        <body>
+        {{{CONTENT}}}
+        </body>
+        </html>";
 
 #[handler]
 async fn get_prompt(response: &mut Response) {
@@ -77,23 +117,9 @@ async fn get_prompt(response: &mut Response) {
 #[handler]
 async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Response) {
     let config = depot.get_typed::<Config>().unwrap();
+    let output_cache: &OutputCacheT = depot.get_typed().unwrap();
 
-    let mut body: String = "
-        <html>
-        <head>
-            <style>
-            body {
-                color: #FFF;
-                background-color: #333;
-            }
-            </style>
-        </head>
-        <body>
-        {{{CONTENT}}}
-        </body>
-        </html>
-    "
-    .to_string();
+    let mut body: String = COMMON_BODY.to_string();
 
     let sleep_instant: Instant = Instant::now() + Duration::from_millis(1500);
 
@@ -188,18 +214,38 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
-    body = body.replace(
-        "{{{CONTENT}}}",
-        &format!(
-            "Accepted<br />{}",
-            mpc_result
-                .unwrap()
-                .replace('&', "&amp;")
-                .replace('<', "&lt;")
-                .replace('\n', "<br />")
-        ),
-    );
-    response.body(body);
+    let mut random_slice = [0u8; 64];
+    let random_result = getrandom::fill(&mut random_slice)
+        .map_err(|e| format!("ERROR: Failed to get random data: {}", e));
+
+    if let Err(e) = random_result {
+        response.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+        eprintln!("ERROR: Failed to fill slice with random data: {}", e);
+        body = body.replace("{{{CONTENT}}}", "Internal Server Error");
+        response.body(body);
+        return;
+    }
+
+    let random_key = hex::encode(random_slice);
+
+    {
+        let mut map = output_cache
+            .lock()
+            .expect("Should be able to get lock on output_map");
+
+        map.insert(
+            random_key.to_owned(),
+            CacheStruct::new(
+                mpc_result
+                    .expect("Should be output from mpc")
+                    .replace('&', "&amp;")
+                    .replace('<', "&lt;")
+                    .replace('\n', "<br />"),
+            ),
+        );
+    }
+
+    response.render(Redirect::found(format!("result/{}", random_key)));
 }
 
 async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String> {
@@ -280,6 +326,36 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
     Ok(output)
 }
 
+#[handler]
+async fn get_cached_output(response: &mut Response, request: &mut Request, depot: &Depot) {
+    let mut body = COMMON_BODY.to_string();
+    let id_opt = request.param::<String>("id");
+    if id_opt.is_none() {
+        response.status_code(StatusCode::BAD_REQUEST);
+        body = body.replace("{{{CONTENT}}}", "Bad Request");
+        response.body(body);
+        return;
+    }
+
+    let output_cache: &OutputCacheT = depot.get_typed().unwrap();
+
+    let mut cache_lock = output_cache
+        .lock()
+        .expect("Should be able to lock output cache Mutex");
+
+    let id = id_opt.unwrap();
+
+    if let Some(v) = cache_lock.get(&id) {
+        body = body.replace("{{{CONTENT}}}", &v.mpc_output);
+        response.body(body);
+        cache_lock.remove(&id);
+    } else {
+        response.status_code(StatusCode::BAD_REQUEST);
+        body = body.replace("{{{CONTENT}}}", "Bad Request");
+        response.body(body);
+    }
+}
+
 #[tokio::main]
 async fn main() {
     for arg in std::env::args() {
@@ -297,10 +373,37 @@ async fn main() {
 
     eprintln!("Listening on: {}", config.address_port);
 
+    let mpc_output_cache: OutputCacheT = Arc::new(Mutex::new(HashMap::new()));
+
+    let mpc_output_cache_clone = mpc_output_cache.clone();
+
+    thread::spawn(move || {
+        loop {
+            sleep(CACHE_LIFETIME);
+
+            let mut lock = mpc_output_cache_clone
+                .lock()
+                .expect("Should be able to unlock Mutex");
+            let mut to_remove = Vec::new();
+
+            for (k, v) in lock.iter() {
+                if v.created_instant.elapsed() > CACHE_LIFETIME {
+                    to_remove.push(k.clone());
+                }
+            }
+
+            for key in to_remove {
+                lock.remove(&key);
+            }
+        }
+    });
+
     let router = Router::new()
         .hoop(affix_state::inject(config))
+        .hoop(affix_state::inject(mpc_output_cache))
         .get(get_prompt)
-        .post(post_prompt);
+        .post(post_prompt)
+        .push(Router::with_path("result/{id}").get(get_cached_output));
 
     Server::new(acceptor).serve(router).await;
 }
