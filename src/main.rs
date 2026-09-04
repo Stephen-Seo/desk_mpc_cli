@@ -246,19 +246,6 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
     }
 
     response.render(Redirect::found(format!("result/{}", random_key)));
-
-    // body = body.replace(
-    //     "{{{CONTENT}}}",
-    //     &format!(
-    //         "Accepted<br />{}",
-    //         mpc_result
-    //             .unwrap()
-    //             .replace('&', "&amp;")
-    //             .replace('<', "&lt;")
-    //             .replace('\n', "<br />")
-    //     ),
-    // );
-    // response.body(body);
 }
 
 async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String> {
@@ -362,12 +349,10 @@ async fn get_cached_output(response: &mut Response, request: &mut Request, depot
         body = body.replace("{{{CONTENT}}}", &v.mpc_output);
         response.body(body);
         cache_lock.remove(&id);
-        return;
     } else {
         response.status_code(StatusCode::BAD_REQUEST);
         body = body.replace("{{{CONTENT}}}", "Bad Request");
         response.body(body);
-        return;
     }
 }
 
