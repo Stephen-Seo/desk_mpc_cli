@@ -229,15 +229,22 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
     let random_key = hex::encode(random_slice);
 
     {
-        let mut map = output_cache
-            .lock()
-            .expect("Should be able to get lock on output_map");
+        let lock_result = output_cache.lock();
+        if let Err(e) = lock_result {
+            response.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+            eprintln!("ERROR: Failed to get lock on mutex: {}", e);
+            body = body.replace("{{{CONTENT}}}", "Internal Server Error");
+            response.body(body);
+            return;
+        }
+
+        let mut map = lock_result.unwrap();
 
         map.insert(
             random_key.to_owned(),
             CacheStruct::new(
                 mpc_result
-                    .expect("Should be output from mpc")
+                    .unwrap()
                     .replace('&', "&amp;")
                     .replace('<', "&lt;")
                     .replace('\n', "<br />"),
@@ -339,16 +346,22 @@ async fn get_cached_output(response: &mut Response, request: &mut Request, depot
 
     let output_cache: &OutputCacheT = depot.get_typed().unwrap();
 
-    let mut cache_lock = output_cache
-        .lock()
-        .expect("Should be able to lock output cache Mutex");
+    let cache_lock_result = output_cache.lock();
+    if let Err(e) = cache_lock_result {
+        eprintln!("ERROR: Failed to lock mutex: {}", e);
+        response.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+        body = body.replace("{{{CONTENT}}}", "Internal Server Error");
+        response.body(body);
+        return;
+    }
+
+    let mut cache_lock = cache_lock_result.unwrap();
 
     let id = id_opt.unwrap();
 
-    if let Some(v) = cache_lock.get(&id) {
+    if let Some(v) = cache_lock.remove(&id) {
         body = body.replace("{{{CONTENT}}}", &v.mpc_output);
         response.body(body);
-        cache_lock.remove(&id);
     } else {
         response.status_code(StatusCode::BAD_REQUEST);
         body = body.replace("{{{CONTENT}}}", "Bad Request");
