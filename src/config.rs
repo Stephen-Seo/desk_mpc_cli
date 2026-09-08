@@ -37,6 +37,7 @@ pub struct Config {
     // username is the key.
     pub users: HashMap<String, UserPass>,
     pub address_port: String,
+    pub result_endpoint: String,
 }
 
 impl Config {
@@ -51,11 +52,20 @@ impl Config {
         let mut hash_password_opt: Option<String> = None;
         let mut hash_salt_opt: Option<String> = None;
         let mut address_port_opt: Option<String> = None;
+        let mut result_endpoint_opt: Option<String> = None;
 
         let mut users: HashMap<String, UserPass> = HashMap::new();
         for line in reader.lines() {
             let line = line.map_err(|_| "Failed to read line from config file!".to_string())?;
-            if line.starts_with("mpc_host") {
+            if line.starts_with("result_endpoint") {
+                let idx = line
+                    .find('=')
+                    .ok_or("Invalid result_endpoint line!".to_string())?;
+                let result_endpoint: String = line[(idx + 1)..].trim().to_string();
+                if !result_endpoint.is_empty() {
+                    result_endpoint_opt = Some(result_endpoint);
+                }
+            } else if line.starts_with("mpc_host") {
                 let idx = line.find('=').ok_or("Invalid mpc_host line!".to_string())?;
                 let mpc_host: String = line[(idx + 1)..].trim().to_string();
                 if !mpc_host.is_empty() {
@@ -226,6 +236,7 @@ impl Config {
                 mpc_host,
                 users,
                 address_port,
+                result_endpoint: result_endpoint_opt.unwrap_or(String::from("result")),
             })
         } else {
             Err(String::from("Invalid config file contents!"))

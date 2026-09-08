@@ -252,7 +252,10 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         );
     }
 
-    response.render(Redirect::found(format!("result/{}", random_key)));
+    response.render(Redirect::found(format!(
+        "{}/{}",
+        config.result_endpoint, random_key
+    )));
 }
 
 async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String> {
@@ -411,12 +414,14 @@ async fn main() {
         }
     });
 
+    let result_endpoint: String = format!("{}/{{id}}", config.result_endpoint);
+    eprintln!("Endpoint is: {}", result_endpoint);
     let router = Router::new()
         .hoop(affix_state::inject(config))
         .hoop(affix_state::inject(mpc_output_cache))
         .get(get_prompt)
         .post(post_prompt)
-        .push(Router::with_path("result/{id}").get(get_cached_output));
+        .push(Router::with_path(result_endpoint).get(get_cached_output));
 
     Server::new(acceptor).serve(router).await;
 }
