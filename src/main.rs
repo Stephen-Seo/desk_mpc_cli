@@ -226,18 +226,6 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         .replace('<', "&lt;")
         .replace('\n', "<br />");
 
-    let mut random_slice = [0u8; 64];
-    let random_result = getrandom::fill(&mut random_slice)
-        .map_err(|e| format!("ERROR: Failed to get random data: {}", e));
-
-    if let Err(e) = random_result {
-        response.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-        eprintln!("ERROR: Failed to fill slice with random data: {}", e);
-        body = body.replace("{{{CONTENT}}}", "Internal Server Error");
-        response.body(body);
-        return;
-    }
-
     let random_key = generate_random_string();
 
     {
