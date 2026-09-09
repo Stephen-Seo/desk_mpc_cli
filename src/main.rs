@@ -31,8 +31,6 @@ use crate::config::Config;
 mod config;
 mod hashing;
 
-const CACHE_LIFETIME: Duration = Duration::from_secs(120);
-
 #[derive(Debug, Clone)]
 struct CacheStruct {
     mpc_output: String,
@@ -49,6 +47,8 @@ impl CacheStruct {
 }
 
 type OutputCacheT = Arc<Mutex<HashMap<String, CacheStruct>>>;
+
+const CACHE_LIFETIME: Duration = Duration::from_secs(120);
 
 const COMMON_BODY: &str = "
         <html>
@@ -98,8 +98,8 @@ async fn get_prompt(response: &mut Response) {
             <label><input type=\"radio\" name=\"action\" value=\"toggle\" /> Toggle</label>
             <label><input type=\"radio\" name=\"action\" value=\"next\" /> Next</label>
             <label><input type=\"radio\" name=\"action\" value=\"prev\" /> Prev</label>
-            <label><input type=\"radio\" name=\"action\" value=\"status\" /> Status</label>
             <label><input type=\"radio\" name=\"action\" value=\"single_mode\" /> Single Mode</label>
+            <label><input type=\"radio\" name=\"action\" value=\"status\" /> Status</label>
             </fieldset>
 
             <br />
@@ -214,6 +214,12 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
+    let mpc_output = mpc_result
+        .unwrap()
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('\n', "<br />");
+
     let mut random_slice = [0u8; 64];
     let random_result = getrandom::fill(&mut random_slice)
         .map_err(|e| format!("ERROR: Failed to get random data: {}", e));
@@ -240,16 +246,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
 
         let mut map = lock_result.unwrap();
 
-        map.insert(
-            random_key.to_owned(),
-            CacheStruct::new(
-                mpc_result
-                    .unwrap()
-                    .replace('&', "&amp;")
-                    .replace('<', "&lt;")
-                    .replace('\n', "<br />"),
-            ),
-        );
+        map.insert(random_key.to_owned(), CacheStruct::new(mpc_output));
     }
 
     response.render(Redirect::found(format!(
