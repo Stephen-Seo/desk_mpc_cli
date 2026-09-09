@@ -65,6 +65,12 @@ const COMMON_BODY: &str = "
         </body>
         </html>";
 
+pub fn generate_random_string() -> String {
+    let slice: [u8; 64] = rand::random();
+
+    hex::encode(slice)
+}
+
 #[handler]
 async fn get_prompt(response: &mut Response) {
     response.body(
@@ -232,7 +238,7 @@ async fn post_prompt(request: &mut Request, depot: &Depot, response: &mut Respon
         return;
     }
 
-    let random_key = hex::encode(random_slice);
+    let random_key = generate_random_string();
 
     {
         let lock_result = output_cache.lock();

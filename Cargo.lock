@@ -350,6 +350,7 @@ dependencies = [
  "getrandom 0.4.3",
  "hex",
  "hmac-sha512",
+ "rand 0.10.2",
  "rpassword",
  "salvo",
  "tokio",
