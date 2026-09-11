@@ -330,7 +330,7 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
 #[handler]
 async fn get_cached_output(response: &mut Response, request: &mut Request, depot: &Depot) {
     let mut body = COMMON_BODY.to_string();
-    let id_opt = request.param::<String>("id");
+    let id_opt: Option<&str> = request.param("id");
     if id_opt.is_none() {
         response.status_code(StatusCode::BAD_REQUEST);
         body = body.replace("{{{CONTENT}}}", "Bad Request");
@@ -351,9 +351,9 @@ async fn get_cached_output(response: &mut Response, request: &mut Request, depot
 
     let mut cache_lock = cache_lock_result.unwrap();
 
-    let id = id_opt.unwrap();
+    let id: &str = id_opt.unwrap();
 
-    if let Some(v) = cache_lock.remove(&id) {
+    if let Some(v) = cache_lock.remove(id) {
         body = body.replace("{{{CONTENT}}}", &v.mpc_output);
         response.body(body);
     } else {
