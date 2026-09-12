@@ -50,9 +50,10 @@ type OutputCacheT = Arc<Mutex<HashMap<String, CacheStruct>>>;
 
 const CACHE_LIFETIME: Duration = Duration::from_secs(120);
 
-const COMMON_BODY: &str = "
+const COMMON_BODY: &str = r##"
         <html>
         <head>
+            <meta charset="utf-8">
             <style>
             body {
                 color: #FFF;
@@ -63,7 +64,7 @@ const COMMON_BODY: &str = "
         <body>
         {{{CONTENT}}}
         </body>
-        </html>";
+        </html>"##;
 
 pub fn generate_random_string() -> String {
     let slice: [u8; 64] = rand::random();
@@ -258,10 +259,8 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 .arg("toggle")
                 .output();
             if let Ok(out) = status {
-                output = out
-                    .stdout
-                    .try_into()
-                    .unwrap_or("Unable to be converted to String".to_string());
+                output = String::from_utf8(out.stdout)
+                    .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
                 return Err(format!("Failed to \"toggle\": {}", e));
             }
@@ -272,10 +271,8 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 .arg("next")
                 .output();
             if let Ok(out) = status {
-                output = out
-                    .stdout
-                    .try_into()
-                    .unwrap_or("Unable to be converted to String".to_string());
+                output = String::from_utf8(out.stdout)
+                    .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
                 return Err(format!("Failed to \"next\": {}", e));
             }
@@ -286,10 +283,8 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 .arg("prev")
                 .output();
             if let Ok(out) = status {
-                output = out
-                    .stdout
-                    .try_into()
-                    .unwrap_or("Unable to be converted to String".to_string());
+                output = String::from_utf8(out.stdout)
+                    .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
                 return Err(format!("Failed to \"prev\": {}", e));
             }
@@ -299,10 +294,8 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 .arg(format!("--host={}", config.mpc_host))
                 .output();
             if let Ok(out) = status {
-                output = out
-                    .stdout
-                    .try_into()
-                    .unwrap_or("Unable to be converted to String".to_string());
+                output = String::from_utf8(out.stdout)
+                    .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
                 return Err(format!("Failed to \"status\": {}", e));
             }
@@ -313,10 +306,8 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 .arg("single")
                 .output();
             if let Ok(out) = status {
-                output = out
-                    .stdout
-                    .try_into()
-                    .unwrap_or("Unable to be converted to String".to_string());
+                output = String::from_utf8(out.stdout)
+                    .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
                 return Err(format!("Failed to \"single\": {}", e));
             }
