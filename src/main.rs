@@ -50,8 +50,8 @@ type OutputCacheT = Arc<Mutex<HashMap<String, CacheStruct>>>;
 
 const CACHE_LIFETIME: Duration = Duration::from_secs(120);
 
-const COMMON_BODY: &str = r##"
-        <html>
+const COMMON_BODY: &str = r##"<!doctype html>
+        <html lang="en">
         <head>
             <meta charset="utf-8">
             <style>
@@ -75,9 +75,11 @@ pub fn generate_random_string() -> String {
 #[handler]
 async fn get_prompt(response: &mut Response) {
     response.body(
-        "
-            <html>
+        r##"<!doctype html>
+            <html lang="en">
             <head>
+
+            <meta charset="utf-8">
 
             <style>
             body {
@@ -88,36 +90,36 @@ async fn get_prompt(response: &mut Response) {
 
             </head>
             <body>
-            <form action=\"\" method=\"post\" class=\"prompt_form\">
+            <form action="" method="post" class="prompt_form">
 
-            <label for=\"username\">Username:</label>
-            <input type=\"text\" name=\"username\" id=\"username\" required />
+            <label for="username">Username:</label>
+            <input type="text" name="username" id="username" required />
 
             <br />
 
-            <label for\"password\">Password:</label>
-            <input type=\"password\" name=\"password\" id=\"password\" required />
+            <label for="password">Password:</label>
+            <input type="password" name="password" id="password" required />
 
             <br />
 
             <fieldset>
             <legend>Action</legend>
-            <label><input type=\"radio\" name=\"action\" value=\"toggle\" /> Toggle</label>
-            <label><input type=\"radio\" name=\"action\" value=\"next\" /> Next</label>
-            <label><input type=\"radio\" name=\"action\" value=\"prev\" /> Prev</label>
-            <label><input type=\"radio\" name=\"action\" value=\"single_mode\" /> Single Mode</label>
-            <label><input type=\"radio\" name=\"action\" value=\"status\" /> Status</label>
+            <label><input type="radio" name="action" value="toggle" /> Toggle</label>
+            <label><input type="radio" name="action" value="next" /> Next</label>
+            <label><input type="radio" name="action" value="prev" /> Prev</label>
+            <label><input type="radio" name="action" value="single_mode" /> Single Mode</label>
+            <label><input type="radio" name="action" value="status" /> Status</label>
             </fieldset>
 
             <br />
             <br />
 
-            <input type=\"submit\" value=\"Submit\" />
+            <input type="submit" value="Submit" />
             
             </form>
             </body>
             </html>
-        ",
+        "##,
     );
 }
 
