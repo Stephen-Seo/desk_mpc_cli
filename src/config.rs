@@ -99,11 +99,11 @@ impl Config {
                     {
                         if hex::decode(hash_password).is_err() {
                             return Err(String::from(
-                                "Invalid \"hash_password\" (not hexadecimal)!",
+                                r#"Invalid "hash_password" (not hexadecimal)!"#,
                             ));
                         }
                         if hex::decode(&hash_salt).is_err() {
-                            return Err(String::from("Invalid \"hash_salt\" (not hexadecimal)!"));
+                            return Err(String::from(r#"Invalid "hash_salt" (not hexadecimal)!"#));
                         }
 
                         users.insert(
@@ -161,10 +161,12 @@ impl Config {
                     && let Some(hash_salt) = hash_salt_opt
                 {
                     if hex::decode(hash_password).is_err() {
-                        return Err(String::from("Invalid \"hash_password\" (not hexadecimal)!"));
+                        return Err(String::from(
+                            r#"Invalid "hash_password" (not hexadecimal)!"#,
+                        ));
                     }
                     if hex::decode(&hash_salt).is_err() {
-                        return Err(String::from("Invalid \"hash_salt\" (not hexadecimal)!"));
+                        return Err(String::from(r#"Invalid "hash_salt" (not hexadecimal)!"#));
                     }
 
                     users.insert(
@@ -196,10 +198,12 @@ impl Config {
                     && let Some(hash_salt) = hash_salt_opt
                 {
                     if hex::decode(hash_password).is_err() {
-                        return Err(String::from("Invalid \"hash_password\" (not hexadecimal)!"));
+                        return Err(String::from(
+                            r#"Invalid "hash_password" (not hexadecimal)!"#,
+                        ));
                     }
                     if hex::decode(&hash_salt).is_err() {
-                        return Err(String::from("Invalid \"hash_salt\" (not hexadecimal)!"));
+                        return Err(String::from(r#"Invalid "hash_salt" (not hexadecimal)!"#));
                     }
 
                     users.insert(
@@ -247,11 +251,11 @@ impl Config {
         for arg in std::env::args() {
             if let Some(arg) = arg.strip_prefix("--config=") {
                 let path = PathBuf::from_str(arg)
-                    .map_err(|_| "Failed to parse arg \"--config=<path>\"!".to_string())?;
+                    .map_err(|_| r#"Failed to parse arg "--config=<path>"!"#.to_string())?;
                 return Self::parse_from_config_file(&path);
             }
         }
 
-        Err(String::from("No valid \"--config=<path>\"!"))
+        Err(String::from(r#"No valid "--config=<path>"!"#))
     }
 }

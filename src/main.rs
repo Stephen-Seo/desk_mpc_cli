@@ -264,7 +264,7 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 output = String::from_utf8(out.stdout)
                     .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"toggle\": {}", e));
+                return Err(format!(r#"Failed to "toggle": {}"#, e));
             }
         }
         "next" => {
@@ -276,7 +276,7 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 output = String::from_utf8(out.stdout)
                     .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"next\": {}", e));
+                return Err(format!(r#"Failed to "next": {}"#, e));
             }
         }
         "prev" => {
@@ -288,7 +288,7 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 output = String::from_utf8(out.stdout)
                     .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"prev\": {}", e));
+                return Err(format!(r#"Failed to "prev": {}"#, e));
             }
         }
         "status" => {
@@ -299,7 +299,7 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 output = String::from_utf8(out.stdout)
                     .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"status\": {}", e));
+                return Err(format!(r#"Failed to "status": {}"#, e));
             }
         }
         "single_mode" => {
@@ -311,10 +311,10 @@ async fn do_mpc_command(action: &str, config: &Config) -> Result<String, String>
                 output = String::from_utf8(out.stdout)
                     .unwrap_or("Unable to be converted to UTF-8 String".into());
             } else if let Err(e) = status {
-                return Err(format!("Failed to \"single\": {}", e));
+                return Err(format!(r#"Failed to "single": {}"#, e));
             }
         }
-        _ => return Err(format!("Invalid action \"{}\"", action)),
+        _ => return Err(format!(r#"Invalid action "{}""#, action)),
     }
 
     Ok(output)
@@ -367,7 +367,7 @@ async fn main() {
     }
 
     let config: Config = Config::parse_config_from_arg()
-        .expect("Config file should be specified via \"--config=<filename>\"!");
+        .expect(r#"Config file should be specified via "--config=<filename>"!"#);
 
     let acceptor = TcpListener::new(config.address_port.clone()).bind().await;
 
