@@ -9,5 +9,5 @@ hex = "0.4"
 hmac-sha512 = "1.1"
 rand = "0.10"
 rpassword = "7.5"
-salvo = { version = "0.96", features = ["affix-state"] }
+salvo = { version = "1.0", features = ["affix-state"] }
 tokio = "1.53"
